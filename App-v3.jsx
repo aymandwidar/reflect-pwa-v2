@@ -230,7 +230,7 @@ export default function AppV3() {
     }
   ];
 
-  // V3: Meditation Library with Audio URLs (Free Resources)
+  // V3: Meditation Library (Timer-based - Use with your own audio or silent practice)
   const meditationLibrary = [
     { 
       id: 'anxiety-5', 
@@ -239,7 +239,7 @@ export default function AppV3() {
       category: 'anxiety', 
       icon: '🧘', 
       description: 'Quick calming meditation for anxious moments',
-      audioUrl: 'https://www.soundhealing.com/audio/meditation-5min.mp3'
+      instructions: 'Close your eyes. Focus on your breath. Breathe in for 4, hold for 4, out for 4.'
     },
     { 
       id: 'anxiety-10', 
@@ -248,7 +248,7 @@ export default function AppV3() {
       category: 'anxiety', 
       icon: '🧘‍♀️', 
       description: 'Extended practice for deeper relaxation',
-      audioUrl: 'https://www.soundhealing.com/audio/meditation-10min.mp3'
+      instructions: 'Find a comfortable position. Notice your breath. Let thoughts pass like clouds.'
     },
     { 
       id: 'sleep-15', 
@@ -257,7 +257,7 @@ export default function AppV3() {
       category: 'sleep', 
       icon: '😴', 
       description: 'Drift off peacefully with guided relaxation',
-      audioUrl: 'https://www.soundhealing.com/audio/sleep-meditation.mp3'
+      instructions: 'Lie down comfortably. Relax each part of your body from toes to head.'
     },
     { 
       id: 'morning-10', 
@@ -266,7 +266,7 @@ export default function AppV3() {
       category: 'morning', 
       icon: '🌅', 
       description: 'Start your day with intention and calm',
-      audioUrl: 'https://www.soundhealing.com/audio/morning-meditation.mp3'
+      instructions: 'Sit upright. Set your intention for the day. Breathe with awareness.'
     },
     { 
       id: 'body-scan-20', 
@@ -275,7 +275,7 @@ export default function AppV3() {
       category: 'body', 
       icon: '🫀', 
       description: 'Progressive relaxation through body awareness',
-      audioUrl: 'https://www.soundhealing.com/audio/body-scan.mp3'
+      instructions: 'Scan your body slowly. Notice sensations without judgment. Release tension.'
     },
     { 
       id: 'loving-kindness-15', 
@@ -284,47 +284,47 @@ export default function AppV3() {
       category: 'compassion', 
       icon: '💝', 
       description: 'Cultivate self-compassion and kindness',
-      audioUrl: 'https://www.soundhealing.com/audio/loving-kindness.mp3'
+      instructions: 'Send loving wishes to yourself, then loved ones, then all beings.'
     }
   ];
 
-  // V3: Ambient Sounds with Audio URLs (Looping Sounds)
+  // V3: Ambient Sounds (Visual indicators - Use with your own ambient audio apps)
   const ambientSoundOptions = [
     { 
       id: 'rain', 
       name: 'Rain', 
       icon: '🌧️',
-      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c6e92d28.mp3'
+      suggestion: 'Try: YouTube "Rain Sounds" or Spotify ambient playlists'
     },
     { 
       id: 'ocean', 
       name: 'Ocean Waves', 
       icon: '🌊',
-      audioUrl: 'https://cdn.pixabay.com/audio/2022/06/07/audio_1c4c5b5d5e.mp3'
+      suggestion: 'Try: YouTube "Ocean Waves" or nature sound apps'
     },
     { 
       id: 'forest', 
       name: 'Forest', 
       icon: '🌲',
-      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/15/audio_2c0f3c8c3f.mp3'
+      suggestion: 'Try: YouTube "Forest Sounds" or Calm app'
     },
     { 
       id: 'white-noise', 
       name: 'White Noise', 
       icon: '📻',
-      audioUrl: 'https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3'
+      suggestion: 'Try: White Noise apps or YouTube'
     },
     { 
       id: 'fireplace', 
       name: 'Fireplace', 
       icon: '🔥',
-      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/12/audio_d1718369d8.mp3'
+      suggestion: 'Try: YouTube "Fireplace Sounds"'
     },
     { 
       id: 'coffee-shop', 
       name: 'Coffee Shop', 
       icon: '☕',
-      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_5a0b5c6f85.mp3'
+      suggestion: 'Try: Coffitivity.com or YouTube "Coffee Shop Ambience"'
     }
   ];
 
@@ -590,13 +590,8 @@ export default function AppV3() {
     const interval = setInterval(() => {
       setMeditationTimer(prev => {
         if (prev <= 1) {
-          // Stop audio when meditation completes
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-          }
           setPlayingMeditation(null);
-          setError('✅ Meditation complete!');
+          setError('✅ Meditation complete! Great job! 🧘');
           setTimeout(() => setError(null), 3000);
           return 0;
         }
@@ -1840,117 +1835,79 @@ export default function AppV3() {
                     <button
                       onClick={() => {
                         if (playingMeditation?.id === meditation.id) {
-                          // Pause current meditation
-                          if (audioRef.current) {
-                            audioRef.current.pause();
-                          }
+                          // Stop current meditation
                           setPlayingMeditation(null);
+                          setMeditationTimer(0);
                         } else {
-                          // Stop any currently playing audio
-                          if (audioRef.current) {
-                            audioRef.current.pause();
-                            audioRef.current.currentTime = 0;
-                          }
-                          
                           // Start new meditation
                           setPlayingMeditation(meditation);
                           setMeditationTimer(meditation.duration * 60);
-                          
-                          // Play audio if URL exists
-                          if (meditation.audioUrl) {
-                            const audio = new Audio(meditation.audioUrl);
-                            audio.volume = 0.7;
-                            audio.play().catch(err => {
-                              console.log('Audio play failed:', err);
-                              setError('🎵 Audio playback requires user interaction. Click play again.');
-                              setTimeout(() => setError(null), 3000);
-                            });
-                            audioRef.current = audio;
-                          }
-                          
                           setError(`🧘 Starting ${meditation.name}...`);
                           setTimeout(() => setError(null), 2000);
                         }
                       }}
                       className="w-full py-2 bg-white/30 hover:bg-white/40 rounded-xl text-white text-sm transition-all"
                     >
-                      {playingMeditation?.id === meditation.id ? '⏸️ Pause' : '▶️ Play'}
+                      {playingMeditation?.id === meditation.id ? '⏸️ Stop' : '▶️ Start Timer'}
                     </button>
                   </div>
                 ))}
               </div>
               
-              <h3 className="text-lg font-bold text-white mb-3">🌊 Ambient Sounds</h3>
-              <p className="text-white/70 text-sm mb-3">Mix multiple sounds for your perfect atmosphere</p>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <h3 className="text-lg font-bold text-white mb-3">🌊 Ambient Sound Suggestions</h3>
+              <p className="text-white/70 text-sm mb-4">Click for recommendations on where to find these sounds</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {ambientSoundOptions.map((sound) => (
-                  <button
+                  <div
                     key={sound.id}
-                    onClick={() => {
-                      const isCurrentlyPlaying = ambientSounds[sound.id];
-                      
-                      if (isCurrentlyPlaying) {
-                        // Stop this sound
-                        const audioElement = document.getElementById(`ambient-${sound.id}`);
-                        if (audioElement) {
-                          audioElement.pause();
-                          audioElement.remove();
-                        }
-                      } else {
-                        // Start this sound
-                        if (sound.audioUrl) {
-                          const audio = document.createElement('audio');
-                          audio.id = `ambient-${sound.id}`;
-                          audio.src = sound.audioUrl;
-                          audio.loop = true;
-                          audio.volume = 0.5;
-                          audio.play().catch(err => {
-                            console.log('Ambient sound play failed:', err);
-                          });
-                          document.body.appendChild(audio);
-                        }
-                      }
-                      
-                      setAmbientSounds(prev => ({
-                        ...prev,
-                        [sound.id]: !prev[sound.id]
-                      }));
-                    }}
-                    className={`py-4 rounded-2xl transition-all ${
-                      ambientSounds[sound.id]
-                        ? 'bg-blue-500/40 text-white'
-                        : 'bg-white/20 text-white/70 hover:bg-white/30'
-                    }`}
+                    className="bg-white/20 backdrop-blur-md rounded-2xl p-4 hover:bg-white/30 transition-all"
                   >
-                    <div className="text-3xl mb-1">{sound.icon}</div>
-                    <div className="text-xs">{sound.name}</div>
-                  </button>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="text-3xl">{sound.icon}</div>
+                      <h4 className="text-white font-semibold">{sound.name}</h4>
+                    </div>
+                    <p className="text-white/70 text-xs">{sound.suggestion}</p>
+                  </div>
                 ))}
+              </div>
+              <div className="mt-4 bg-blue-500/20 backdrop-blur-md rounded-2xl p-4">
+                <p className="text-white/80 text-sm">
+                  💡 <strong>Tip:</strong> Open your favorite ambient sound app or YouTube in another tab while using Reflect for the perfect meditation atmosphere!
+                </p>
               </div>
             </div>
 
             {playingMeditation && (
               <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold text-white mb-4">Now Playing: {playingMeditation.name}</h3>
+                <h3 className="text-lg font-bold text-white mb-4">🧘 {playingMeditation.name}</h3>
+                
+                {/* Instructions */}
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-4">
+                  <p className="text-white/90 text-sm leading-relaxed">
+                    {playingMeditation.instructions}
+                  </p>
+                </div>
+                
+                {/* Timer Display */}
                 <div className="text-center mb-4">
                   <div className="text-5xl mb-4">{playingMeditation.icon}</div>
-                  <div className="text-3xl text-white font-bold">
+                  <div className="text-4xl text-white font-bold mb-2">
                     {Math.floor(meditationTimer / 60)}:{(meditationTimer % 60).toString().padStart(2, '0')}
                   </div>
+                  <p className="text-white/70 text-sm">Follow your breath and relax</p>
                 </div>
+                
+                {/* Progress Bar */}
                 <div className="w-full bg-white/20 rounded-full h-3 mb-4">
                   <div 
                     className="bg-blue-400 h-3 rounded-full transition-all"
                     style={{ width: `${((playingMeditation.duration * 60 - meditationTimer) / (playingMeditation.duration * 60)) * 100}%` }}
                   />
                 </div>
+                
+                {/* Stop Button */}
                 <button
                   onClick={() => {
-                    // Stop audio
-                    if (audioRef.current) {
-                      audioRef.current.pause();
-                      audioRef.current.currentTime = 0;
-                    }
                     setPlayingMeditation(null);
                     setMeditationTimer(0);
                   }}
