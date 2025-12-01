@@ -230,24 +230,102 @@ export default function AppV3() {
     }
   ];
 
-  // V3: Meditation Library
+  // V3: Meditation Library with Audio URLs (Free Resources)
   const meditationLibrary = [
-    { id: 'anxiety-5', name: 'Anxiety Relief (5 min)', duration: 5, category: 'anxiety', icon: '🧘', description: 'Quick calming meditation for anxious moments' },
-    { id: 'anxiety-10', name: 'Deep Anxiety Relief (10 min)', duration: 10, category: 'anxiety', icon: '🧘‍♀️', description: 'Extended practice for deeper relaxation' },
-    { id: 'sleep-15', name: 'Sleep Meditation (15 min)', duration: 15, category: 'sleep', icon: '😴', description: 'Drift off peacefully with guided relaxation' },
-    { id: 'morning-10', name: 'Morning Mindfulness (10 min)', duration: 10, category: 'morning', icon: '🌅', description: 'Start your day with intention and calm' },
-    { id: 'body-scan-20', name: 'Body Scan (20 min)', duration: 20, category: 'body', icon: '🫀', description: 'Progressive relaxation through body awareness' },
-    { id: 'loving-kindness-15', name: 'Loving-Kindness (15 min)', duration: 15, category: 'compassion', icon: '💝', description: 'Cultivate self-compassion and kindness' }
+    { 
+      id: 'anxiety-5', 
+      name: 'Anxiety Relief (5 min)', 
+      duration: 5, 
+      category: 'anxiety', 
+      icon: '🧘', 
+      description: 'Quick calming meditation for anxious moments',
+      audioUrl: 'https://www.soundhealing.com/audio/meditation-5min.mp3'
+    },
+    { 
+      id: 'anxiety-10', 
+      name: 'Deep Anxiety Relief (10 min)', 
+      duration: 10, 
+      category: 'anxiety', 
+      icon: '🧘‍♀️', 
+      description: 'Extended practice for deeper relaxation',
+      audioUrl: 'https://www.soundhealing.com/audio/meditation-10min.mp3'
+    },
+    { 
+      id: 'sleep-15', 
+      name: 'Sleep Meditation (15 min)', 
+      duration: 15, 
+      category: 'sleep', 
+      icon: '😴', 
+      description: 'Drift off peacefully with guided relaxation',
+      audioUrl: 'https://www.soundhealing.com/audio/sleep-meditation.mp3'
+    },
+    { 
+      id: 'morning-10', 
+      name: 'Morning Mindfulness (10 min)', 
+      duration: 10, 
+      category: 'morning', 
+      icon: '🌅', 
+      description: 'Start your day with intention and calm',
+      audioUrl: 'https://www.soundhealing.com/audio/morning-meditation.mp3'
+    },
+    { 
+      id: 'body-scan-20', 
+      name: 'Body Scan (20 min)', 
+      duration: 20, 
+      category: 'body', 
+      icon: '🫀', 
+      description: 'Progressive relaxation through body awareness',
+      audioUrl: 'https://www.soundhealing.com/audio/body-scan.mp3'
+    },
+    { 
+      id: 'loving-kindness-15', 
+      name: 'Loving-Kindness (15 min)', 
+      duration: 15, 
+      category: 'compassion', 
+      icon: '💝', 
+      description: 'Cultivate self-compassion and kindness',
+      audioUrl: 'https://www.soundhealing.com/audio/loving-kindness.mp3'
+    }
   ];
 
-  // V3: Ambient Sounds
+  // V3: Ambient Sounds with Audio URLs (Looping Sounds)
   const ambientSoundOptions = [
-    { id: 'rain', name: 'Rain', icon: '🌧️' },
-    { id: 'ocean', name: 'Ocean Waves', icon: '🌊' },
-    { id: 'forest', name: 'Forest', icon: '🌲' },
-    { id: 'white-noise', name: 'White Noise', icon: '📻' },
-    { id: 'fireplace', name: 'Fireplace', icon: '🔥' },
-    { id: 'coffee-shop', name: 'Coffee Shop', icon: '☕' }
+    { 
+      id: 'rain', 
+      name: 'Rain', 
+      icon: '🌧️',
+      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c6e92d28.mp3'
+    },
+    { 
+      id: 'ocean', 
+      name: 'Ocean Waves', 
+      icon: '🌊',
+      audioUrl: 'https://cdn.pixabay.com/audio/2022/06/07/audio_1c4c5b5d5e.mp3'
+    },
+    { 
+      id: 'forest', 
+      name: 'Forest', 
+      icon: '🌲',
+      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/15/audio_2c0f3c8c3f.mp3'
+    },
+    { 
+      id: 'white-noise', 
+      name: 'White Noise', 
+      icon: '📻',
+      audioUrl: 'https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3'
+    },
+    { 
+      id: 'fireplace', 
+      name: 'Fireplace', 
+      icon: '🔥',
+      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/12/audio_d1718369d8.mp3'
+    },
+    { 
+      id: 'coffee-shop', 
+      name: 'Coffee Shop', 
+      icon: '☕',
+      audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_5a0b5c6f85.mp3'
+    }
   ];
 
   // Initialize Voice Recognition
@@ -512,6 +590,11 @@ export default function AppV3() {
     const interval = setInterval(() => {
       setMeditationTimer(prev => {
         if (prev <= 1) {
+          // Stop audio when meditation completes
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
           setPlayingMeditation(null);
           setError('✅ Meditation complete!');
           setTimeout(() => setError(null), 3000);
@@ -1756,10 +1839,38 @@ export default function AppV3() {
                     <div className="text-white/60 text-xs mb-3">⏱️ {meditation.duration} minutes</div>
                     <button
                       onClick={() => {
-                        setPlayingMeditation(meditation);
-                        setMeditationTimer(meditation.duration * 60);
-                        setError(`🧘 Starting ${meditation.name}...`);
-                        setTimeout(() => setError(null), 2000);
+                        if (playingMeditation?.id === meditation.id) {
+                          // Pause current meditation
+                          if (audioRef.current) {
+                            audioRef.current.pause();
+                          }
+                          setPlayingMeditation(null);
+                        } else {
+                          // Stop any currently playing audio
+                          if (audioRef.current) {
+                            audioRef.current.pause();
+                            audioRef.current.currentTime = 0;
+                          }
+                          
+                          // Start new meditation
+                          setPlayingMeditation(meditation);
+                          setMeditationTimer(meditation.duration * 60);
+                          
+                          // Play audio if URL exists
+                          if (meditation.audioUrl) {
+                            const audio = new Audio(meditation.audioUrl);
+                            audio.volume = 0.7;
+                            audio.play().catch(err => {
+                              console.log('Audio play failed:', err);
+                              setError('🎵 Audio playback requires user interaction. Click play again.');
+                              setTimeout(() => setError(null), 3000);
+                            });
+                            audioRef.current = audio;
+                          }
+                          
+                          setError(`🧘 Starting ${meditation.name}...`);
+                          setTimeout(() => setError(null), 2000);
+                        }
                       }}
                       className="w-full py-2 bg-white/30 hover:bg-white/40 rounded-xl text-white text-sm transition-all"
                     >
@@ -1770,11 +1881,36 @@ export default function AppV3() {
               </div>
               
               <h3 className="text-lg font-bold text-white mb-3">🌊 Ambient Sounds</h3>
+              <p className="text-white/70 text-sm mb-3">Mix multiple sounds for your perfect atmosphere</p>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                 {ambientSoundOptions.map((sound) => (
                   <button
                     key={sound.id}
                     onClick={() => {
+                      const isCurrentlyPlaying = ambientSounds[sound.id];
+                      
+                      if (isCurrentlyPlaying) {
+                        // Stop this sound
+                        const audioElement = document.getElementById(`ambient-${sound.id}`);
+                        if (audioElement) {
+                          audioElement.pause();
+                          audioElement.remove();
+                        }
+                      } else {
+                        // Start this sound
+                        if (sound.audioUrl) {
+                          const audio = document.createElement('audio');
+                          audio.id = `ambient-${sound.id}`;
+                          audio.src = sound.audioUrl;
+                          audio.loop = true;
+                          audio.volume = 0.5;
+                          audio.play().catch(err => {
+                            console.log('Ambient sound play failed:', err);
+                          });
+                          document.body.appendChild(audio);
+                        }
+                      }
+                      
                       setAmbientSounds(prev => ({
                         ...prev,
                         [sound.id]: !prev[sound.id]
@@ -1810,6 +1946,11 @@ export default function AppV3() {
                 </div>
                 <button
                   onClick={() => {
+                    // Stop audio
+                    if (audioRef.current) {
+                      audioRef.current.pause();
+                      audioRef.current.currentTime = 0;
+                    }
                     setPlayingMeditation(null);
                     setMeditationTimer(0);
                   }}
