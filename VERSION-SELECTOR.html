@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflect PWA - Version Selector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-500/80 to-purple-400/80 flex items-center justify-center p-4">
+  <div class="max-w-4xl w-full">
+    <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl mb-6">
+      <h1 class="text-4xl font-bold text-white mb-2">Reflect PWA</h1>
+      <p class="text-white/80">Choose your version</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- V1 Card -->
+      <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-xl hover:bg-white/30 transition-all">
+        <div class="text-6xl mb-4">📱</div>
+        <h2 class="text-3xl font-bold text-white mb-4">Version 1</h2>
+        <p class="text-white/90 mb-6">Original Edition</p>
+        
+        <div class="space-y-2 mb-6">
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>AI CBT Coach</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>Mood Tracker</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>Settings</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>Real-time Sync</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>PWA Features</span>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <a 
+            href="http://localhost:3000" 
+            target="_blank"
+            class="block w-full py-3 bg-white/40 hover:bg-white/50 rounded-2xl text-white font-semibold text-center transition-all"
+          >
+            Open V1
+          </a>
+          <a 
+            href="README.md" 
+            target="_blank"
+            class="block w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all"
+          >
+            📖 V1 Documentation
+          </a>
+        </div>
+      </div>
+
+      <!-- V2 Card -->
+      <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-xl hover:bg-white/30 transition-all border-2 border-yellow-400/50">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="text-6xl">🚀</div>
+          <div class="bg-yellow-400/30 backdrop-blur-md rounded-xl px-3 py-1 text-yellow-200 text-sm font-bold">
+            NEW!
+          </div>
+        </div>
+        <h2 class="text-3xl font-bold text-white mb-4">Version 2</h2>
+        <p class="text-white/90 mb-6">Enhanced Edition</p>
+        
+        <div class="space-y-2 mb-6 max-h-48 overflow-y-auto">
+          <div class="flex items-center gap-2 text-white/80">
+            <span>✅</span>
+            <span>All V1 Features</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🎤</span>
+            <span>Voice Input/Output</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>📊</span>
+            <span>Mood Analytics</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>📖</span>
+            <span>AI Journal</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🏋️</span>
+            <span>CBT Exercises</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🎯</span>
+            <span>Coping Toolkit</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🏅</span>
+            <span>Achievements</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🆘</span>
+            <span>SOS Resources</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>🌙</span>
+            <span>Dark Mode</span>
+          </div>
+          <div class="flex items-center gap-2 text-white/80">
+            <span>📤</span>
+            <span>Data Export</span>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <a 
+            href="http://localhost:3001" 
+            target="_blank"
+            class="block w-full py-3 bg-yellow-500/40 hover:bg-yellow-500/50 rounded-2xl text-white font-semibold text-center transition-all"
+          >
+            Open V2 🚀
+          </a>
+          <a 
+            href="README-V2.md" 
+            target="_blank"
+            class="block w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all"
+          >
+            📖 V2 Documentation
+          </a>
+          <a 
+            href="V2-QUICK-START.md" 
+            target="_blank"
+            class="block w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all"
+          >
+            ⚡ Quick Start Guide
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-6 shadow-xl mt-6">
+      <h3 class="text-xl font-bold text-white mb-3">ℹ️ Information</h3>
+      <div class="space-y-2 text-white/90 text-sm">
+        <p>• Both versions use the same Firebase database</p>
+        <p>• Your data syncs between V1 and V2</p>
+        <p>• V2 includes all V1 features plus 10 new major features</p>
+        <p>• Voice features require microphone permission</p>
+        <p>• V2 works best in Chrome or Edge browsers</p>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="bg-white/20 backdrop-blur-lg rounded-3xl p-6 shadow-xl mt-6">
+      <h3 class="text-xl font-bold text-white mb-3">📚 Documentation</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <a href="START_HERE.md" target="_blank" class="py-2 px-4 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all">
+          Start Here
+        </a>
+        <a href="SETUP_GUIDE.md" target="_blank" class="py-2 px-4 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all">
+          Setup Guide
+        </a>
+        <a href="V2-FEATURES.md" target="_blank" class="py-2 px-4 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all">
+          V2 Features
+        </a>
+        <a href="TROUBLESHOOTING.md" target="_blank" class="py-2 px-4 bg-white/20 hover:bg-white/30 rounded-xl text-white text-sm text-center transition-all">
+          Troubleshooting
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
