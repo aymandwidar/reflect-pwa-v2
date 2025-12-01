@@ -505,6 +505,25 @@ export default function AppV3() {
     return () => unsubscribe();
   }, [db, userId]);
 
+  // V3: Meditation Timer Countdown
+  useEffect(() => {
+    if (!playingMeditation || meditationTimer <= 0) return;
+    
+    const interval = setInterval(() => {
+      setMeditationTimer(prev => {
+        if (prev <= 1) {
+          setPlayingMeditation(null);
+          setError('✅ Meditation complete!');
+          setTimeout(() => setError(null), 3000);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [playingMeditation, meditationTimer]);
+
   // Calculate Mood Streak
   const calculateStreak = useCallback((logs) => {
     if (logs.length === 0) {
@@ -799,7 +818,7 @@ export default function AppV3() {
     if (!db || !userId) return;
     
     try {
-      const strategyRef = doc(db, 'artifacts', window.__app_id, 'users', userId, 'coping_strategies', strategyId);
+      const strategyRef = doc(db, 'artifacts', window.__app_id, 'users', userId, 'coping_strategies', String(strategyId));
       const strategy = copingStrategies.find(s => s.id === strategyId);
       
       if (strategy) {
@@ -811,9 +830,19 @@ export default function AppV3() {
           effectiveness: newEffectiveness,
           lastUsed: serverTimestamp()
         });
+        
+        // Show feedback
+        setError(`✅ Used: ${strategy.name}`);
+        setTimeout(() => setError(null), 2000);
       }
     } catch (err) {
       console.error('Error updating strategy:', err);
+      // Show feedback even if save fails
+      const strategy = copingStrategies.find(s => s.id === strategyId);
+      if (strategy) {
+        setError(`✅ Used: ${strategy.name}`);
+        setTimeout(() => setError(null), 2000);
+      }
     }
   }, [db, userId, copingStrategies]);
 
@@ -903,46 +932,47 @@ export default function AppV3() {
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 mb-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="text-4xl font-bold text-white">R</div>
               <div>
-                <h1 className="text-2xl font-bold text-white">{t.appName} {t.version}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Reflect</h1>
                 <p className="text-xs text-white/60">Comprehensive Wellness Platform</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-wrap">
               {/* Streak Display */}
               {moodStreak > 0 && (
-                <div className="bg-orange-500/30 backdrop-blur-md rounded-2xl px-4 py-2">
-                  <div className="text-white font-bold">🔥 {moodStreak} Day Streak</div>
+                <div className="bg-orange-500/30 backdrop-blur-md rounded-2xl px-3 py-1.5 md:px-4 md:py-2">
+                  <div className="text-white font-bold text-sm md:text-base">🔥 {moodStreak}</div>
                 </div>
               )}
-              {/* Language Selector */}
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="bg-white/20 backdrop-blur-md rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <option value="en">🇺🇸 EN</option>
-                <option value="es">🇪🇸 ES</option>
-                <option value="fr">🇫🇷 FR</option>
-                <option value="ar">🇸🇦 AR</option>
-                <option value="de">🇩🇪 DE</option>
-              </select>
+              {/* Language Selector and SOS on same line */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="bg-white/20 backdrop-blur-md rounded-xl px-2 py-1.5 md:px-3 md:py-2 text-white text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <option value="en">🇺🇸 EN</option>
+                  <option value="es">🇪🇸 ES</option>
+                  <option value="fr">🇫🇷 FR</option>
+                  <option value="ar">🇸🇦 AR</option>
+                  <option value="de">🇩🇪 DE</option>
+                </select>
+                {/* SOS Button - Smaller */}
+                <button
+                  onClick={() => setShowSOS(true)}
+                  className="px-2 py-1.5 md:px-3 md:py-2 bg-red-500/40 hover:bg-red-500/50 rounded-xl text-white font-semibold transition-all text-xs md:text-sm"
+                >
+                  🆘
+                </button>
+              </div>
               {/* Dark Mode Toggle */}
               <button
                 onClick={() => setDarkMode(!darkMode)}
-                className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white transition-all"
+                className="p-2 md:p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white transition-all"
               >
                 {darkMode ? '☀️' : '🌙'}
               </button>
-              {/* SOS Button */}
-              <button
-                onClick={() => setShowSOS(true)}
-                className="px-4 py-2 bg-red-500/40 hover:bg-red-500/50 rounded-xl text-white font-semibold transition-all"
-              >
-                🆘 SOS
-              </button>
-              <div className="text-xs text-white/80 font-mono">ID: {userId?.slice(0, 8)}</div>
+              <div className="hidden md:block text-xs text-white/80 font-mono">ID: {userId?.slice(0, 8)}</div>
             </div>
           </div>
         </div>
