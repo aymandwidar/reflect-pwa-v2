@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/", "destination": "/index-v2.html" }
-  ]
+  "buildCommand": "npm run build:v3",
+  "outputDirectory": "dist-v3",
+  "framework": "vite",
+  "installCommand": "npm install"
 }
