@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build:v3",
+  "outputDirectory": "dist-v3",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index-v3.html"
+    }
+  ]
+}
