@@ -6,8 +6,11 @@ export default defineConfig({
   build: {
     outDir: 'dist-v3',
     rollupOptions: {
-      input: {
-        main: 'index-v3.html'
+      input: 'index-v3.html',
+      output: {
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },

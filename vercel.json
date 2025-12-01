@@ -2,5 +2,11 @@
   "buildCommand": "npm run build:v3",
   "outputDirectory": "dist-v3",
   "framework": "vite",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index-v3.html"
+    }
+  ]
 }
