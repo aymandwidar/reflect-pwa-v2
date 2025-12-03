@@ -8,12 +8,15 @@
     "dev:v2": "vite --config vite.config.v2.js",
     "dev:v3": "vite --config vite.config.v3.js",
     "dev:v4": "vite --config vite.config.v4.js",
+    "dev:v5": "vite --config vite.config.v5.js",
     "build": "vite build",
     "build:v2": "vite build --config vite.config.v2.js",
     "build:v3": "vite build --config vite.config.v3.js && node -e \"require('fs').copyFileSync('dist-v3/index-v3.html', 'dist-v3/index.html')\"",
     "build:v4": "vite build --config vite.config.v4.js && node -e \"require('fs').copyFileSync('dist-v4/index-v4.html', 'dist-v4/index.html')\"",
+    "build:v5": "vite build --config vite.config.v5.js && node -e \"require('fs').copyFileSync('dist-v5/index-v5.html', 'dist-v5/index.html')\"",
     "preview": "vite preview",
     "preview:v4": "vite preview --outDir dist-v4",
+    "preview:v5": "vite preview --outDir dist-v5",
     "serve": "npx serve -s . -p 3000"
   },
   "dependencies": {

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Reflect V5 - AI-Powered Mental Wellness Platform with Community Support & Personalized Insights">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="version" content="5.0.0">
+  <title>Reflect V5 - Intelligence Meets Connection</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* V4: Accessibility Styles */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
+    .dyslexia-font * {
+      font-family: 'OpenDyslexic', sans-serif !important;
+    }
+    
+    .high-contrast {
+      --bg-gradient-from: #000066;
+      --bg-gradient-to: #000033;
+      --text-primary: #FFFFFF;
+      --text-secondary: #FFFF00;
+      --border-color: #FFFFFF;
+    }
+    
+    .high-contrast .bg-gradient-to-br {
+      background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-to));
+    }
+    
+    .text-small { font-size: 14px !important; }
+    .text-normal { font-size: 16px !important; }
+    .text-large { font-size: 18px !important; }
+    .text-xlarge { font-size: 20px !important; }
+    
+    /* Focus indicators */
+    button:focus, input:focus, select:focus, textarea:focus {
+      outline: 2px solid #4F46E5;
+      outline-offset: 2px;
+    }
+    
+    .high-contrast button:focus,
+    .high-contrast input:focus,
+    .high-contrast select:focus,
+    .high-contrast textarea:focus {
+      outline: 3px solid #FFFF00;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="module">
+    // Firebase Configuration
+    window.__firebase_config = {
+      apiKey: "AIzaSyCBrQGXnAD2fRKbRmzUD9Fn-ZZ47t8leOc",
+      authDomain: "reflectk-e0c00.firebaseapp.com",
+      projectId: "reflectk-e0c00",
+      storageBucket: "reflectk-e0c00.firebasestorage.app",
+      messagingSenderId: "531329704782",
+      appId: "1:531329704782:web:7e7bbb0bf87fb355d8341f"
+    };
+    
+    window.__app_id = "reflect-pwa-v5";
+    window.__initial_auth_token = null;
+  </script>
+  
+  <script type="module" src="/main-v5.jsx"></script>
+  
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+  </script>
+</body>
+</html>
