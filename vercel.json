@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build:v4",
-  "outputDirectory": "dist-v4",
+  "buildCommand": "npm run build:v5",
+  "outputDirectory": "dist-v5",
   "framework": null,
   "installCommand": "npm install",
   "rewrites": [
