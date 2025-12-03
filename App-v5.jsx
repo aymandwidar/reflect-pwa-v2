@@ -1505,9 +1505,16 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-indigo-500/80 to-purple-400/80'} flex items-center justify-center`}>
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: darkMode 
+            ? 'linear-gradient(to bottom right, #1f2937, #111827)'
+            : `linear-gradient(to bottom right, ${customTheme.gradientFrom}, ${customTheme.gradientTo})`
+        }}
+      >
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
-          <div className="animate-pulse text-white text-xl">Loading Reflect V2...</div>
+          <div className="animate-pulse text-white text-xl">Loading Reflect V5...</div>
         </div>
       </div>
     );
@@ -1516,7 +1523,14 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
   const analytics = getMoodAnalytics();
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-indigo-500/80 to-purple-400/80'} p-4`}>
+    <div 
+      className={`min-h-screen p-4`}
+      style={{
+        background: darkMode 
+          ? 'linear-gradient(to bottom right, #1f2937, #111827)'
+          : `linear-gradient(to bottom right, ${customTheme.gradientFrom}, ${customTheme.gradientTo})`
+      }}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 mb-4 shadow-xl">
