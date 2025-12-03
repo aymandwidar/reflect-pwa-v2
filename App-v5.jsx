@@ -211,14 +211,14 @@ export default function AppV5() {
     { id: 'general', name: 'General Support', icon: '🤗', description: 'Open space for all mental health topics', members: 0 }
   ];
 
-  // V5: Theme Presets
+  // V5: Theme Presets (softer, calmer colors)
   const defaultThemePresets = [
-    { name: 'Ocean Blue', primary: '#0ea5e9', secondary: '#06b6d4', gradientFrom: '#0ea5e9', gradientTo: '#06b6d4' },
-    { name: 'Forest Green', primary: '#10b981', secondary: '#059669', gradientFrom: '#10b981', gradientTo: '#059669' },
-    { name: 'Sunset Orange', primary: '#f97316', secondary: '#ea580c', gradientFrom: '#f97316', gradientTo: '#ea580c' },
-    { name: 'Purple Dream', primary: '#8b5cf6', secondary: '#7c3aed', gradientFrom: '#8b5cf6', gradientTo: '#7c3aed' },
-    { name: 'Rose Pink', primary: '#ec4899', secondary: '#db2777', gradientFrom: '#ec4899', gradientTo: '#db2777' },
-    { name: 'Midnight', primary: '#1e293b', secondary: '#0f172a', gradientFrom: '#1e293b', gradientTo: '#0f172a' }
+    { name: 'Default Purple', primary: '#6366f1', secondary: '#8b5cf6', gradientFrom: '#667eea', gradientTo: '#764ba2' },
+    { name: 'Ocean Blue', primary: '#3b82f6', secondary: '#06b6d4', gradientFrom: '#4facfe', gradientTo: '#00f2fe' },
+    { name: 'Forest Green', primary: '#10b981', secondary: '#34d399', gradientFrom: '#11998e', gradientTo: '#38ef7d' },
+    { name: 'Sunset Orange', primary: '#f59e0b', secondary: '#f97316', gradientFrom: '#fa709a', gradientTo: '#fee140' },
+    { name: 'Lavender Dream', primary: '#a78bfa', secondary: '#c084fc', gradientFrom: '#a18cd1', gradientTo: '#fbc2eb' },
+    { name: 'Rose Pink', primary: '#ec4899', secondary: '#f472b6', gradientFrom: '#f093fb', gradientTo: '#f5576c' }
   ];
 
 
@@ -1503,6 +1503,14 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
   }, [favoritePrompts, db, userId]);
 
 
+  // Helper function to add opacity to hex color
+  const addOpacity = (hex, opacity = 0.7) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   if (loading) {
     return (
       <div 
@@ -1510,7 +1518,7 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
         style={{
           background: darkMode 
             ? 'linear-gradient(to bottom right, #1f2937, #111827)'
-            : `linear-gradient(to bottom right, ${customTheme.gradientFrom}, ${customTheme.gradientTo})`
+            : `linear-gradient(to bottom right, ${addOpacity(customTheme.gradientFrom, 0.65)}, ${addOpacity(customTheme.gradientTo, 0.55)})`
         }}
       >
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
@@ -1528,7 +1536,7 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
       style={{
         background: darkMode 
           ? 'linear-gradient(to bottom right, #1f2937, #111827)'
-          : `linear-gradient(to bottom right, ${customTheme.gradientFrom}, ${customTheme.gradientTo})`
+          : `linear-gradient(to bottom right, ${addOpacity(customTheme.gradientFrom, 0.65)}, ${addOpacity(customTheme.gradientTo, 0.55)})`
       }}
     >
       <div className="max-w-6xl mx-auto">
