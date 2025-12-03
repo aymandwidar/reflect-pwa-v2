@@ -7,13 +7,19 @@
     "dev": "vite --port 3000",
     "dev:v2": "vite --config vite.config.v2.js",
     "dev:v3": "vite --config vite.config.v3.js",
+    "dev:v4": "vite --config vite.config.v4.js",
     "build": "vite build",
     "build:v2": "vite build --config vite.config.v2.js",
     "build:v3": "vite build --config vite.config.v3.js && node -e \"require('fs').copyFileSync('dist-v3/index-v3.html', 'dist-v3/index.html')\"",
+    "build:v4": "vite build --config vite.config.v4.js && node -e \"require('fs').copyFileSync('dist-v4/index-v4.html', 'dist-v4/index.html')\"",
     "preview": "vite preview",
+    "preview:v4": "vite preview --outDir dist-v4",
     "serve": "npx serve -s . -p 3000"
   },
   "dependencies": {
+    "@sentry/react": "^10.28.0",
+    "crypto-js": "^4.2.0",
+    "posthog-js": "^1.299.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
