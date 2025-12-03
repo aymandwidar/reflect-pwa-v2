@@ -66,6 +66,15 @@
     .high-contrast textarea:focus {
       outline: 3px solid #FFFF00;
     }
+    
+    /* V5: Dynamic text colors based on theme */
+    .text-white {
+      color: var(--text-primary, #ffffff) !important;
+    }
+    
+    .text-white\/60, .text-white\/70, .text-white\/80 {
+      color: var(--text-secondary, rgba(255, 255, 255, 0.8)) !important;
+    }
   </style>
 </head>
 <body>

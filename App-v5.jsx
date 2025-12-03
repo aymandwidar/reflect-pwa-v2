@@ -1511,6 +1511,19 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
+  // Helper function to determine if we need dark text based on background brightness
+  const needsDarkText = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5; // If bright background, use dark text
+  };
+
+  const textColor = needsDarkText(customTheme.gradientFrom) ? '#1f2937' : '#ffffff';
+  const textColorSecondary = needsDarkText(customTheme.gradientFrom) ? '#4b5563' : 'rgba(255, 255, 255, 0.8)';
+
   if (loading) {
     return (
       <div 
@@ -1536,7 +1549,10 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
       style={{
         background: darkMode 
           ? 'linear-gradient(to bottom right, #1f2937, #111827)'
-          : `linear-gradient(to bottom right, ${addOpacity(customTheme.gradientFrom, 0.65)}, ${addOpacity(customTheme.gradientTo, 0.55)})`
+          : `linear-gradient(to bottom right, ${addOpacity(customTheme.gradientFrom, 0.65)}, ${addOpacity(customTheme.gradientTo, 0.55)})`,
+        color: textColor,
+        '--text-primary': textColor,
+        '--text-secondary': textColorSecondary
       }}
     >
       <div className="max-w-6xl mx-auto">
