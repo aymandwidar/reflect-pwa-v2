@@ -709,6 +709,63 @@ export default function AppV4() {
     }
   };
   
+  // V4: Apply Accessibility Settings
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    // High contrast
+    if (highContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+    
+    // Text size
+    root.classList.remove('text-small', 'text-normal', 'text-large', 'text-xlarge');
+    root.classList.add(`text-${textSize}`);
+    
+    // Dyslexia font
+    if (dyslexiaFont) {
+      root.classList.add('dyslexia-font');
+    } else {
+      root.classList.remove('dyslexia-font');
+    }
+  }, [highContrast, textSize, dyslexiaFont]);
+  
+  // V4: Keyboard Navigation
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Ctrl/Cmd + K = Focus chat input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('chat-input')?.focus();
+      }
+      
+      // Ctrl/Cmd + M = Go to mood tracker
+      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+        e.preventDefault();
+        setActiveView('mood');
+      }
+      
+      // Ctrl/Cmd + S = Go to settings
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        setActiveView('settings');
+      }
+      
+      // Escape = Close modals
+      if (e.key === 'Escape') {
+        setShowSosModal(false);
+        setShowCrisisModal(false);
+        setShowTimeoutWarning(false);
+        setShowOnboarding(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+  
   // V3: Meditation Timer Countdown
   useEffect(() => {
     if (!playingMeditation || meditationTimer <= 0) return;
@@ -1206,10 +1263,11 @@ export default function AppV4() {
                   <option value="ar">🇸🇦 AR</option>
                   <option value="de">🇩🇪 DE</option>
                 </select>
-                {/* SOS Button - Smaller */}
+                {/* V4: Enhanced SOS Button */}
                 <button
-                  onClick={() => setShowSOS(true)}
+                  onClick={() => setShowSosModal(true)}
                   className="px-2 py-1.5 md:px-3 md:py-2 bg-red-500/40 hover:bg-red-500/50 rounded-xl text-white font-semibold transition-all text-xs md:text-sm"
+                  aria-label="Emergency help and crisis resources"
                 >
                   🆘
                 </button>
@@ -1236,8 +1294,17 @@ export default function AppV4() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-2 mb-4 shadow-xl grid grid-cols-3 md:grid-cols-9 gap-2">
+        {/* V4: Screen Reader Status Region */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {sendingMessage && "Sending message to AI therapist"}
+          {savingMood && "Saving mood log"}
+          {savingJournal && "Saving journal entry"}
+          {savingSettings && "Saving settings"}
+          {error && error}
+        </div>
+
+        {/* V4: Navigation with ARIA labels */}
+        <nav className="bg-white/20 backdrop-blur-lg rounded-3xl p-2 mb-4 shadow-xl grid grid-cols-3 md:grid-cols-9 gap-2" role="navigation" aria-label="Main navigation">
           <button
             onClick={() => setActiveView('chat')}
             className={`py-3 px-2 md:px-4 rounded-2xl font-semibold transition-all text-sm ${
@@ -1245,6 +1312,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Chat with AI therapist"
+            aria-current={activeView === 'chat' ? 'page' : undefined}
           >
             💬 {t.chat}
           </button>
@@ -1255,6 +1324,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Track your mood"
+            aria-current={activeView === 'mood' ? 'page' : undefined}
           >
             😊 {t.mood}
           </button>
@@ -1265,6 +1336,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Write in journal"
+            aria-current={activeView === 'journal' ? 'page' : undefined}
           >
             📖 {t.journal}
           </button>
@@ -1275,6 +1348,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="CBT exercises"
+            aria-current={activeView === 'exercises' ? 'page' : undefined}
           >
             🏋️ {t.exercises}
           </button>
@@ -1285,6 +1360,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Coping strategies toolkit"
+            aria-current={activeView === 'coping' ? 'page' : undefined}
           >
             🎯 {t.coping}
           </button>
@@ -1295,6 +1372,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Guided CBT programs"
+            aria-current={activeView === 'programs' ? 'page' : undefined}
           >
             🎯 {t.programs}
           </button>
@@ -1305,6 +1384,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Wellness and meditation tools"
+            aria-current={activeView === 'wellness' ? 'page' : undefined}
           >
             🎵 {t.wellness}
           </button>
@@ -1315,6 +1396,8 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="Support network and contacts"
+            aria-current={activeView === 'network' ? 'page' : undefined}
           >
             🤝 {t.network}
           </button>
@@ -1325,10 +1408,12 @@ export default function AppV4() {
                 ? 'bg-white/40 text-white shadow-lg'
                 : 'text-white/70 hover:bg-white/10'
             }`}
+            aria-label="App settings and preferences"
+            aria-current={activeView === 'settings' ? 'page' : undefined}
           >
             ⚙️ {t.settings}
           </button>
-        </div>
+        </nav>
 
 
         {/* Chat View */}
@@ -1474,6 +1559,7 @@ export default function AppV4() {
               </div>
               <div className="flex gap-2">
                 <input
+                  id="chat-input"
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
@@ -1481,6 +1567,7 @@ export default function AppV4() {
                   placeholder="Share what's on your mind..."
                   disabled={sendingMessage}
                   className="flex-1 bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  aria-label="Type your message to the AI therapist"
                 />
                 {voiceEnabled && (
                   <button
@@ -2333,6 +2420,98 @@ export default function AppV4() {
                 </div>
               </div>
 
+              {/* V4: Accessibility Settings */}
+              <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4">
+                <h3 className="text-white font-semibold mb-4">♿ Accessibility</h3>
+                
+                {/* High Contrast */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <label className="font-medium text-white">High Contrast Mode</label>
+                    <p className="text-sm text-white/60">Increase color contrast for better visibility</p>
+                  </div>
+                  <button
+                    onClick={() => setHighContrast(!highContrast)}
+                    className={`relative w-14 h-8 rounded-full transition-colors ${
+                      highContrast ? 'bg-indigo-600' : 'bg-gray-400'
+                    }`}
+                    aria-label={`High contrast mode ${highContrast ? 'enabled' : 'disabled'}`}
+                    role="switch"
+                    aria-checked={highContrast}
+                  >
+                    <span
+                      className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
+                        highContrast ? 'translate-x-6' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                {/* Text Size */}
+                <div className="mb-4">
+                  <label className="block font-medium text-white mb-3">Text Size</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {['small', 'normal', 'large', 'xlarge'].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setTextSize(size)}
+                        className={`py-2 rounded-xl text-center transition-all ${
+                          textSize === size
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white/20 text-white hover:bg-white/30'
+                        }`}
+                        aria-label={`Set text size to ${size}`}
+                      >
+                        <span className={`font-bold ${
+                          size === 'small' ? 'text-xs' :
+                          size === 'normal' ? 'text-sm' :
+                          size === 'large' ? 'text-base' : 'text-lg'
+                        }`}>A</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Dyslexia Font */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <label className="font-medium text-white">Dyslexia-Friendly Font</label>
+                    <p className="text-sm text-white/60">OpenDyslexic font for easier reading</p>
+                  </div>
+                  <button
+                    onClick={() => setDyslexiaFont(!dyslexiaFont)}
+                    className={`relative w-14 h-8 rounded-full transition-colors ${
+                      dyslexiaFont ? 'bg-indigo-600' : 'bg-gray-400'
+                    }`}
+                    role="switch"
+                    aria-checked={dyslexiaFont}
+                  >
+                    <span
+                      className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
+                        dyslexiaFont ? 'translate-x-6' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                {/* Session Timeout */}
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-white">Session Timeout (minutes)</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    value={sessionTimeout}
+                    onChange={(e) => setSessionTimeout(parseInt(e.target.value))}
+                    className="w-full bg-white/30 backdrop-blur-md rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    aria-describedby="timeout-help"
+                  />
+                  <p id="timeout-help" className="text-xs text-white/60 mt-1">
+                    Auto-logout after this many minutes of inactivity
+                  </p>
+                </div>
+              </div>
+
               <button
                 onClick={saveSettings}
                 disabled={savingSettings}
@@ -2351,81 +2530,200 @@ export default function AppV4() {
           </div>
         )}
 
-        {/* SOS Modal */}
-        {showSOS && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 max-w-2xl w-full shadow-2xl">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-white">🆘 Crisis Resources</h2>
-                <button
-                  onClick={() => setShowSOS(false)}
-                  className="text-white/80 hover:text-white text-2xl"
-                >
-                  ✕
-                </button>
+        {/* V4: Crisis Detection Modal */}
+        {showCrisisModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-labelledby="crisis-title">
+            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-4">🆘</div>
+                <h2 id="crisis-title" className="text-2xl font-bold text-red-600 mb-2">We're Concerned About You</h2>
+                <p className="text-gray-700">Your message suggests you might be in crisis. Please reach out for immediate help.</p>
               </div>
               
-              <div className="space-y-4">
-                <div className="bg-red-500/30 backdrop-blur-md rounded-2xl p-4">
-                  <h3 className="text-white font-bold mb-2">🚨 Emergency</h3>
-                  <p className="text-white/90 text-sm mb-3">If you're in immediate danger, call emergency services</p>
-                  <a
-                    href="tel:911"
-                    className="block w-full py-3 bg-red-500/60 hover:bg-red-500/70 rounded-xl text-white font-bold text-center transition-all"
-                  >
-                    📞 Call 911
+              <div className="space-y-4 mb-6">
+                <div className="bg-red-100 border-2 border-red-300 rounded-2xl p-4">
+                  <h3 className="font-bold text-red-800 mb-2">🚨 Emergency (Life-Threatening)</h3>
+                  <a href="tel:911" className="block bg-red-600 text-white text-center py-3 rounded-xl font-bold text-lg hover:bg-red-700">
+                    📞 Call 911 Now
                   </a>
                 </div>
-
-                <div className="bg-blue-500/30 backdrop-blur-md rounded-2xl p-4">
-                  <h3 className="text-white font-bold mb-2">💙 Crisis Hotlines</h3>
+                
+                <div className="bg-blue-100 border-2 border-blue-300 rounded-2xl p-4">
+                  <h3 className="font-bold text-blue-800 mb-2">💬 Crisis Support (24/7)</h3>
                   <div className="space-y-2">
-                    <a
-                      href="tel:988"
-                      className="block w-full py-3 bg-blue-500/40 hover:bg-blue-500/50 rounded-xl text-white font-semibold text-center transition-all"
-                    >
-                      📞 988 - Suicide & Crisis Lifeline
+                    <a href="tel:988" className="block bg-blue-600 text-white text-center py-3 rounded-xl font-bold hover:bg-blue-700">
+                      📞 Call 988 - Suicide & Crisis Lifeline
                     </a>
-                    <a
-                      href="sms:741741"
-                      className="block w-full py-3 bg-blue-500/40 hover:bg-blue-500/50 rounded-xl text-white font-semibold text-center transition-all"
-                    >
+                    <a href="sms:741741?body=HELLO" className="block bg-blue-500 text-white text-center py-3 rounded-xl font-bold hover:bg-blue-600">
                       💬 Text HOME to 741741 - Crisis Text Line
                     </a>
                   </div>
                 </div>
-
-                <div className="bg-purple-500/30 backdrop-blur-md rounded-2xl p-4">
-                  <h3 className="text-white font-bold mb-2">🫁 Quick Coping Strategies</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        setShowSOS(false);
-                        setActiveView('exercises');
-                        setIsBreathing(true);
-                      }}
-                      className="py-3 bg-purple-500/40 hover:bg-purple-500/50 rounded-xl text-white text-sm transition-all"
-                    >
-                      🫁 Breathing Exercise
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowSOS(false);
-                        setActiveView('coping');
-                      }}
-                      className="py-3 bg-purple-500/40 hover:bg-purple-500/50 rounded-xl text-white text-sm transition-all"
-                    >
-                      🎯 Coping Toolkit
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4">
-                  <p className="text-white/80 text-sm text-center">
-                    You're not alone. Help is available 24/7.
-                  </p>
+                
+                <div className="bg-purple-100 border-2 border-purple-300 rounded-2xl p-4">
+                  <h3 className="font-bold text-purple-800 mb-2">🧘 Quick Calming Exercise</h3>
+                  <button
+                    onClick={() => {
+                      setShowCrisisModal(false);
+                      setActiveView('exercises');
+                      setIsBreathing(true);
+                    }}
+                    className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700"
+                  >
+                    Start 4-7-8 Breathing Now
+                  </button>
                 </div>
               </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCrisisModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 rounded-xl py-3 font-medium hover:bg-gray-300"
+                >
+                  I'm Safe, Continue
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCrisisModal(false);
+                    setActiveView('network');
+                  }}
+                  className="flex-1 bg-indigo-600 text-white rounded-xl py-3 font-medium hover:bg-indigo-700"
+                >
+                  View My Support Network
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center mt-4">
+                This app is not a substitute for professional help. If you're in crisis, please reach out immediately.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* V4: Session Timeout Warning Modal */}
+        {showTimeoutWarning && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-labelledby="timeout-title">
+            <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 max-w-md mx-4">
+              <h3 id="timeout-title" className="text-xl font-bold text-gray-800 mb-4">⏰ Session Expiring</h3>
+              <p className="text-gray-700 mb-6">
+                Your session will expire in 2 minutes due to inactivity. Click continue to stay logged in.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setLastActivity(Date.now());
+                    setShowTimeoutWarning(false);
+                  }}
+                  className="flex-1 bg-indigo-600 text-white rounded-xl py-3 font-medium hover:bg-indigo-700"
+                >
+                  Continue Session
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 bg-gray-200 text-gray-700 rounded-xl py-3 font-medium hover:bg-gray-300"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* V4: Enhanced SOS Modal */}
+        {showSosModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" role="dialog" aria-labelledby="sos-title">
+            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-3">🆘</div>
+                <h2 id="sos-title" className="text-3xl font-bold text-red-600 mb-2">Emergency Resources</h2>
+                <p className="text-gray-600">Help is available 24/7</p>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <a
+                  href="tel:911"
+                  className="block bg-red-600 hover:bg-red-700 text-white rounded-2xl p-5 text-center transition-all transform hover:scale-105"
+                >
+                  <div className="text-3xl mb-2">🚨</div>
+                  <div className="text-xl font-bold">Call 911</div>
+                  <div className="text-sm opacity-90">Life-threatening emergency</div>
+                </a>
+                
+                <a
+                  href="tel:988"
+                  className="block bg-blue-600 hover:bg-blue-700 text-white rounded-2xl p-5 text-center transition-all transform hover:scale-105"
+                >
+                  <div className="text-3xl mb-2">☎️</div>
+                  <div className="text-xl font-bold">Call 988</div>
+                  <div className="text-sm opacity-90">Suicide & Crisis Lifeline</div>
+                </a>
+                
+                <a
+                  href="sms:741741?body=HELLO"
+                  className="block bg-purple-600 hover:bg-purple-700 text-white rounded-2xl p-5 text-center transition-all transform hover:scale-105"
+                >
+                  <div className="text-3xl mb-2">💬</div>
+                  <div className="text-xl font-bold">Text HOME to 741741</div>
+                  <div className="text-sm opacity-90">Crisis Text Line</div>
+                </a>
+              </div>
+              
+              {contacts.filter(c => c.isEmergency).length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-bold text-gray-800 mb-3 text-center">My Emergency Contacts</h3>
+                  <div className="space-y-2">
+                    {contacts.filter(c => c.isEmergency).map(contact => (
+                      <a
+                        key={contact.id}
+                        href={`tel:${contact.phone}`}
+                        className="block bg-indigo-100 hover:bg-indigo-200 rounded-xl p-4 transition-all"
+                      >
+                        <div className="font-bold text-indigo-900">{contact.name}</div>
+                        <div className="text-sm text-indigo-700">{contact.relationship}</div>
+                        <div className="text-sm text-indigo-600">{contact.phone}</div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="mb-6">
+                <h3 className="font-bold text-gray-800 mb-3 text-center">Quick Coping Tools</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setShowSosModal(false);
+                      setActiveView('exercises');
+                      setIsBreathing(true);
+                    }}
+                    className="bg-green-100 hover:bg-green-200 rounded-xl p-4 text-center transition-all"
+                  >
+                    <div className="text-2xl mb-1">🧘</div>
+                    <div className="text-sm font-medium text-green-900">Breathing</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSosModal(false);
+                      setActiveView('coping');
+                    }}
+                    className="bg-yellow-100 hover:bg-yellow-200 rounded-xl p-4 text-center transition-all"
+                  >
+                    <div className="text-2xl mb-1">🎯</div>
+                    <div className="text-sm font-medium text-yellow-900">Coping Kit</div>
+                  </button>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowSosModal(false)}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl py-3 font-medium transition-all"
+              >
+                Close
+              </button>
+              
+              <p className="text-xs text-gray-500 text-center mt-4">
+                You are not alone. Help is available right now.
+              </p>
             </div>
           </div>
         )}

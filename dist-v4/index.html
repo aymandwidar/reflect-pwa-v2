@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Reflect V3 - Comprehensive Mental Wellness Platform with AI CBT Coach">
+  <meta name="description" content="Reflect V4 - Enhanced Security & Accessibility Mental Wellness Platform with AI CBT Coach">
   <meta name="theme-color" content="#6366f1">
-  <title>Reflect V3 - Mental Wellness Platform</title>
+  <title>Reflect V4 - Enhanced Security & Accessibility</title>
   <link rel="manifest" href="/assets/manifest-OusjXYXU.json">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=OpenDyslexic&display=swap" rel="stylesheet">
   <style>
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -17,8 +18,55 @@
     .fade-in {
       animation: fadeIn 0.3s ease-out;
     }
+    
+    /* V4: Accessibility Styles */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+    
+    .dyslexia-font * {
+      font-family: 'OpenDyslexic', sans-serif !important;
+    }
+    
+    .high-contrast {
+      --bg-gradient-from: #000066;
+      --bg-gradient-to: #000033;
+      --text-primary: #FFFFFF;
+      --text-secondary: #FFFF00;
+      --border-color: #FFFFFF;
+    }
+    
+    .high-contrast .bg-gradient-to-br {
+      background: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-to));
+    }
+    
+    .text-small { font-size: 14px !important; }
+    .text-normal { font-size: 16px !important; }
+    .text-large { font-size: 18px !important; }
+    .text-xlarge { font-size: 20px !important; }
+    
+    /* Focus indicators */
+    button:focus, input:focus, select:focus, textarea:focus {
+      outline: 2px solid #4F46E5;
+      outline-offset: 2px;
+    }
+    
+    .high-contrast button:focus,
+    .high-contrast input:focus,
+    .high-contrast select:focus,
+    .high-contrast textarea:focus {
+      outline: 3px solid #FFFF00;
+    }
   </style>
-  <script type="module" crossorigin src="/assets/index-v4-imPS1Q-Z.js"></script>
+  <script type="module" crossorigin src="/assets/index-v4-DnKw4YnT.js"></script>
 </head>
 <body>
   <div id="root"></div>
