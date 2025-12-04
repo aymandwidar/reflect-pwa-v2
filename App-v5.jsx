@@ -85,9 +85,10 @@ export default function AppV5() {
   
   // Settings State
   const [age, setAge] = useState('');
-  const [groqKey, setGroqKey] = useState('');
-  const [deepseekKey, setDeepseekKey] = useState('');
-  const [geminiKey, setGeminiKey] = useState('');
+  const [openRouterKey, setOpenRouterKey] = useState(''); // V5: Primary API
+  const [groqKey, setGroqKey] = useState(''); // V5: Fallback 1
+  const [geminiKey, setGeminiKey] = useState(''); // V5: Fallback 2
+  const [lastUsedProvider, setLastUsedProvider] = useState(''); // Track which AI responded
   const [savingSettings, setSavingSettings] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [ttsEnabled, setTtsEnabled] = useState(true);
@@ -599,9 +600,9 @@ export default function AppV5() {
         const data = snapshot.data();
         setAge(data.age || '');
         
-        // V4: Decrypt API keys
+        // V5: Decrypt API keys (OpenRouter, Groq, Gemini)
+        setOpenRouterKey(decryptKey(data.openRouterKey) || '');
         setGroqKey(decryptKey(data.groqKey) || '');
-        setDeepseekKey(decryptKey(data.deepseekKey) || '');
         setGeminiKey(decryptKey(data.geminiKey) || '');
         
         setDarkMode(data.darkMode || false);
@@ -944,11 +945,11 @@ export default function AppV5() {
     try {
       const settingsRef = doc(db, 'artifacts', window.__app_id, 'users', userId, 'user_settings', 'keys');
       
-      // V4: Encrypt API keys before saving
+      // V5: Encrypt API keys before saving (OpenRouter, Groq, Gemini)
       const encryptedSettings = {
         age,
+        openRouterKey: encryptKey(openRouterKey),
         groqKey: encryptKey(groqKey),
-        deepseekKey: encryptKey(deepseekKey),
         geminiKey: encryptKey(geminiKey),
         darkMode,
         voiceEnabled,
@@ -969,7 +970,119 @@ export default function AppV5() {
     } finally {
       setSavingSettings(false);
     }
-  }, [db, userId, age, groqKey, deepseekKey, geminiKey, darkMode, voiceEnabled, ttsEnabled, language, sessionTimeout, highContrast, textSize, dyslexiaFont]);
+  }, [db, userId, age, openRouterKey, groqKey, geminiKey, darkMode, voiceEnabled, ttsEnabled, language, sessionTimeout, highContrast, textSize, dyslexiaFont]);
+
+  // V5: Unified AI calling function with smart fallback (OpenRouter → Groq → Gemini)
+  const callAI = useCallback(async (systemPrompt, userMessage, conversationHistory = [], maxTokens = 500, temperature = 0.8) => {
+    const errors = [];
+    
+    // Try OpenRouter first (primary)
+    if (openRouterKey) {
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openRouterKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Reflect PWA'
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-3.5-sonnet', // High quality model
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...conversationHistory,
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: maxTokens,
+            temperature: temperature
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setLastUsedProvider('OpenRouter (Claude)');
+          return data.choices[0].message.content;
+        }
+        
+        const errorData = await response.json();
+        errors.push(`OpenRouter: ${errorData.error?.message || 'Request failed'}`);
+      } catch (err) {
+        errors.push(`OpenRouter: ${err.message}`);
+      }
+    }
+    
+    // Fallback to Groq (fast and reliable)
+    if (groqKey) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...conversationHistory,
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: maxTokens,
+            temperature: temperature
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setLastUsedProvider('Groq (Llama)');
+          return data.choices[0].message.content;
+        }
+        
+        const errorData = await response.json();
+        errors.push(`Groq: ${errorData.error?.message || 'Request failed'}`);
+      } catch (err) {
+        errors.push(`Groq: ${err.message}`);
+      }
+    }
+    
+    // Final fallback to Gemini
+    if (geminiKey) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `${systemPrompt}\n\nConversation history:\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nUser: ${userMessage}`
+              }]
+            }],
+            generationConfig: {
+              temperature: temperature,
+              maxOutputTokens: maxTokens
+            }
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setLastUsedProvider('Gemini');
+          return data.candidates[0].content.parts[0].text;
+        }
+        
+        const errorData = await response.json();
+        errors.push(`Gemini: ${errorData.error?.message || 'Request failed'}`);
+      } catch (err) {
+        errors.push(`Gemini: ${err.message}`);
+      }
+    }
+    
+    // All providers failed
+    throw new Error(`All AI providers failed. Please check your API keys in Settings.\n\nErrors:\n${errors.join('\n')}`);
+  }, [openRouterKey, groqKey, geminiKey]);
 
   // Call AI based on mode
   const callCbtCoach = useCallback(async (userMessage, mode) => {
@@ -977,42 +1090,16 @@ export default function AppV5() {
       ? `You are a warm, empathetic, non-judgmental CBT (Cognitive Behavioral Therapy) coach. Your role is to guide users through cognitive restructuring using Socratic dialogue. Ask thoughtful questions to help them examine their thoughts and feelings. Keep responses concise (2-3 sentences max). Be supportive and encouraging.`
       : `You are a warm, empathetic, non-judgmental CBT (Cognitive Behavioral Therapy) coach specializing in deep cognitive restructuring. Provide comprehensive, thoughtful analysis of the user's thoughts and feelings. Use Socratic dialogue to guide them through examining their beliefs, identifying cognitive distortions, and developing balanced perspectives. Be thorough but compassionate. Provide 4-6 sentences with actionable insights.`;
     
-    try {
-      if (!groqKey) {
-        throw new Error('Groq API key not configured. Please add it in Settings.');
-      }
-      
-      // Use Groq for both modes with different parameters
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(mode === 'fast' ? -6 : -10).map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: mode === 'fast' ? 200 : 500,
-          temperature: mode === 'fast' ? 0.7 : 0.8
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Groq API request failed');
-      }
-      
-      const data = await response.json();
-      return data.choices[0].message.content;
-      
-    } catch (err) {
-      throw err;
-    }
-  }, [groqKey, messages]);
+    const conversationHistory = messages.slice(mode === 'fast' ? -6 : -10).map(m => ({ 
+      role: m.role, 
+      content: m.content 
+    }));
+    
+    const maxTokens = mode === 'fast' ? 200 : 500;
+    const temperature = mode === 'fast' ? 0.7 : 0.8;
+    
+    return await callAI(systemPrompt, userMessage, conversationHistory, maxTokens, temperature);
+  }, [callAI, messages]);
 
   // V4: Send Message with Crisis Detection
   const sendMessage = useCallback(async () => {
@@ -1124,34 +1211,17 @@ export default function AppV5() {
     try {
       const journalRef = collection(db, 'artifacts', window.__app_id, 'users', userId, 'journal_entries');
       
-      // Get AI insights if Groq key is available
+      // Get AI insights using fallback system
       let aiInsights = null;
-      if (groqKey) {
+      if (openRouterKey || groqKey || geminiKey) {
         try {
-          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${groqKey}`
-            },
-            body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
-              messages: [
-                { 
-                  role: 'system', 
-                  content: 'You are a CBT therapist analyzing a journal entry. Identify: 1) Emotional tone, 2) Any cognitive distortions, 3) Suggested CBT techniques. Be brief and supportive.' 
-                },
-                { role: 'user', content: currentJournalEntry }
-              ],
-              max_tokens: 300,
-              temperature: 0.7
-            })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            aiInsights = data.choices[0].message.content;
-          }
+          aiInsights = await callAI(
+            'You are a CBT therapist analyzing a journal entry. Identify: 1) Emotional tone, 2) Any cognitive distortions, 3) Suggested CBT techniques. Be brief and supportive.',
+            currentJournalEntry,
+            [],
+            300,
+            0.7
+          );
         } catch (err) {
           console.error('AI insights error:', err);
         }
@@ -1170,7 +1240,7 @@ export default function AppV5() {
     } finally {
       setSavingJournal(false);
     }
-  }, [currentJournalEntry, db, userId, groqKey]);
+  }, [currentJournalEntry, db, userId, openRouterKey, groqKey, geminiKey, callAI]);
 
   // Use Coping Strategy
   const useStrategy = useCallback(async (strategyId, effectiveness) => {
@@ -1273,8 +1343,8 @@ export default function AppV5() {
 
   // V5: Generate Mood Insights with AI
   const generateMoodInsights = useCallback(async () => {
-    if (!groqKey || moodLogs.length < 3) {
-      setError('Need at least 3 mood logs and Groq API key for insights');
+    if ((!openRouterKey && !groqKey && !geminiKey) || moodLogs.length < 3) {
+      setError('Need at least 3 mood logs and an API key for insights');
       return;
     }
 
@@ -1298,22 +1368,13 @@ Provide:
 
 Format as JSON: { "patterns": "", "triggers": "", "predictions": "", "recommendations": "" }`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 800,
-          temperature: 0.7
-        })
-      });
-
-      const data = await response.json();
-      const insightsText = data.choices[0].message.content;
+      const insightsText = await callAI(
+        'You are a mental health data analyst. Analyze mood patterns and provide actionable insights.',
+        prompt,
+        [],
+        800,
+        0.7
+      );
       
       // Try to parse JSON, fallback to text
       let insights;
@@ -1343,12 +1404,12 @@ Format as JSON: { "patterns": "", "triggers": "", "predictions": "", "recommenda
     } finally {
       setLoadingInsights(false);
     }
-  }, [groqKey, moodLogs, db, userId]);
+  }, [openRouterKey, groqKey, geminiKey, moodLogs, db, userId, callAI]);
 
   // V5: Generate AI Journal Prompt
   const generateJournalPrompt = useCallback(async (basedOnMood = null) => {
-    if (!groqKey) {
-      setError('Groq API key required for AI prompts');
+    if (!openRouterKey && !groqKey && !geminiKey) {
+      setError('API key required for AI prompts');
       return;
     }
 
@@ -1360,30 +1421,23 @@ Format as JSON: { "patterns": "", "triggers": "", "predictions": "", "recommenda
 The prompt should encourage self-reflection, emotional processing, and personal growth. 
 Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 150,
-          temperature: 0.8
-        })
-      });
-
-      const data = await response.json();
-      const newPrompt = data.choices[0].message.content.replace(/^["']|["']$/g, '');
+      const newPrompt = await callAI(
+        'You are a compassionate therapist creating journaling prompts.',
+        prompt,
+        [],
+        150,
+        0.8
+      );
       
-      setDailyPrompt(newPrompt);
-      setSelectedPrompt(newPrompt);
+      const cleanPrompt = newPrompt.replace(/^["']|["']$/g, '');
+      
+      setDailyPrompt(cleanPrompt);
+      setSelectedPrompt(cleanPrompt);
       
       // Save to history
       if (db && userId) {
         await addDoc(collection(db, 'artifacts', window.__app_id, 'users', userId, 'prompts'), {
-          prompt: newPrompt,
+          prompt: cleanPrompt,
           mood: moodContext,
           timestamp: serverTimestamp()
         });
@@ -1393,7 +1447,7 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
     } finally {
       setGeneratingPrompt(false);
     }
-  }, [groqKey, moodLogs, db, userId]);
+  }, [openRouterKey, groqKey, geminiKey, moodLogs, db, userId, callAI]);
 
   // V5: Join Support Group
   const joinGroup = useCallback(async (groupId) => {
@@ -2692,35 +2746,48 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
                 />
               </div>
 
+              {/* V5: Smart AI Fallback System */}
+              <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 mb-4">
+                <h3 className="text-white font-semibold mb-2">🤖 AI Provider Priority</h3>
+                <p className="text-white/80 text-sm mb-3">
+                  Reflect uses a smart fallback system. Add at least one API key. Priority: OpenRouter → Groq → Gemini
+                </p>
+                {lastUsedProvider && (
+                  <div className="bg-green-500/30 rounded-xl px-3 py-2 mb-3">
+                    <p className="text-white text-sm">✓ Last response from: <strong>{lastUsedProvider}</strong></p>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-white font-medium mb-2">
-                  Groq API Key <span className="text-yellow-300">(Fast Response)</span>
+                  OpenRouter API Key <span className="text-green-300">(Priority 1 - Best Quality)</span>
+                </label>
+                <input
+                  type="password"
+                  value={openRouterKey}
+                  onChange={(e) => setOpenRouterKey(e.target.value)}
+                  placeholder="Enter OpenRouter API key (uses Claude)"
+                  className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-medium mb-2">
+                  Groq API Key <span className="text-yellow-300">(Priority 2 - Fast & Free)</span>
                 </label>
                 <input
                   type="password"
                   value={groqKey}
                   onChange={(e) => setGroqKey(e.target.value)}
-                  placeholder="Enter Groq API key"
+                  placeholder="Enter Groq API key (uses Llama)"
                   className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
               </div>
 
               <div>
                 <label className="block text-white font-medium mb-2">
-                  Deepseek API Key <span className="text-blue-300">(Optional - Not needed, using Groq for both modes)</span>
-                </label>
-                <input
-                  type="password"
-                  value={deepseekKey}
-                  onChange={(e) => setDeepseekKey(e.target.value)}
-                  placeholder="Optional - Groq is used for both modes"
-                  className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white font-medium mb-2">
-                  Gemini API Key <span className="text-purple-300">(Multimodal/Future)</span>
+                  Gemini API Key <span className="text-purple-300">(Priority 3 - Fallback)</span>
                 </label>
                 <input
                   type="password"
