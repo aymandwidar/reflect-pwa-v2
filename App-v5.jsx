@@ -969,14 +969,56 @@ export default function AppV5() {
     }
   }, [db, userId, age, openRouterKey, groqKey, darkMode, voiceEnabled, ttsEnabled, language, sessionTimeout, highContrast, textSize, dyslexiaFont]);
 
-  // V5: Unified AI calling function with smart fallback (OpenRouter Free → Groq)
-  // Cost Policy: Prioritize OpenRouter free models, fallback to Groq
+  // V5: Speed-First AI with Smart Timeout (Groq → OpenRouter FREE with 5s timeout)
+  // Strategy: Fast responses first, fallback to free models if needed
   const callAI = useCallback(async (systemPrompt, userMessage, conversationHistory = [], maxTokens = 500, temperature = 0.8) => {
     const errors = [];
     
-    // Try OpenRouter FREE models first (primary - zero cost)
-    if (openRouterKey) {
+    // PRIORITY 1: Groq (Fast - 1-3 seconds typical)
+    if (groqKey) {
+      console.log('⚡ Using Groq API (speed priority)');
       try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant', // High-speed model
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...conversationHistory,
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: maxTokens,
+            temperature: temperature
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setLastUsedProvider('Groq (Llama 8B) ⚡');
+          return data.choices[0].message.content;
+        }
+        
+        const errorData = await response.json();
+        errors.push(`Groq: ${errorData.error?.message || 'Request failed'}`);
+        console.log('⚠️ Groq failed, trying OpenRouter free model...');
+      } catch (err) {
+        errors.push(`Groq: ${err.message}`);
+        console.log('⚠️ Groq error, trying OpenRouter free model...');
+      }
+    }
+    
+    // PRIORITY 2: OpenRouter FREE with 5-second timeout
+    if (openRouterKey) {
+      console.log('🔄 Trying OpenRouter FREE model (with 5s timeout)...');
+      try {
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -986,7 +1028,7 @@ export default function AppV5() {
             'X-Title': 'Reflect PWA'
           },
           body: JSON.stringify({
-            model: 'mistralai/mistral-7b-instruct:free', // FREE tier model with :free tag
+            model: 'mistralai/mistral-7b-instruct:free', // FREE tier model
             messages: [
               { role: 'system', content: systemPrompt },
               ...conversationHistory,
@@ -994,56 +1036,27 @@ export default function AppV5() {
             ],
             max_tokens: maxTokens,
             temperature: temperature
-          })
+          }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok) {
           const data = await response.json();
-          setLastUsedProvider('OpenRouter (Mistral Free)');
+          setLastUsedProvider('OpenRouter (Mistral Free) 💰');
           return data.choices[0].message.content;
         }
         
         const errorData = await response.json();
         errors.push(`OpenRouter Free: ${errorData.error?.message || 'Request failed'}`);
-        console.log('⚠️ OpenRouter free model failed, falling back to Groq');
       } catch (err) {
-        errors.push(`OpenRouter Free: ${err.message}`);
-        console.log('⚠️ OpenRouter free model error, falling back to Groq');
-      }
-    }
-    
-    // Fallback to Groq (mandatory fallback per cost policy)
-    if (groqKey) {
-      console.log('🔄 Using Groq API fallback (cost-aware)');
-      try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant', // High-speed model per policy
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...conversationHistory,
-              { role: 'user', content: userMessage }
-            ],
-            max_tokens: maxTokens,
-            temperature: temperature
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setLastUsedProvider('Groq (Llama 8B)');
-          return data.choices[0].message.content;
+        if (err.name === 'AbortError') {
+          errors.push('OpenRouter Free: Timeout after 5 seconds (too slow)');
+          console.log('⏱️ OpenRouter timed out after 5 seconds');
+        } else {
+          errors.push(`OpenRouter Free: ${err.message}`);
         }
-        
-        const errorData = await response.json();
-        errors.push(`Groq: ${errorData.error?.message || 'Request failed'}`);
-      } catch (err) {
-        errors.push(`Groq: ${err.message}`);
       }
     }
     
@@ -2713,14 +2726,14 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
                 />
               </div>
 
-              {/* V5: Cost-Optimized AI Fallback System */}
+              {/* V5: Speed-First AI Strategy */}
               <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 mb-4">
-                <h3 className="text-white font-semibold mb-2">🤖 AI Cost Policy</h3>
+                <h3 className="text-white font-semibold mb-2">⚡ AI Speed Strategy</h3>
                 <p className="text-white/80 text-sm mb-3">
-                  💰 <strong>Cost-Minimized:</strong> OpenRouter FREE models → Groq fallback
+                  <strong>Speed-First:</strong> Groq (1-3s) → OpenRouter FREE (5s timeout)
                 </p>
                 <p className="text-white/70 text-xs mb-3">
-                  Priority 1: OpenRouter (free tier with :free tag) | Priority 2: Groq (high-speed fallback)
+                  Priority 1: Groq (fastest) | Priority 2: OpenRouter free (cost-effective backup)
                 </p>
                 {lastUsedProvider && (
                   <div className="bg-green-500/30 rounded-xl px-3 py-2 mb-3">
@@ -2731,21 +2744,7 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
 
               <div>
                 <label className="block text-white font-medium mb-2">
-                  OpenRouter API Key <span className="text-green-300">(Priority 1 - FREE Models)</span>
-                </label>
-                <input
-                  type="password"
-                  value={openRouterKey}
-                  onChange={(e) => setOpenRouterKey(e.target.value)}
-                  placeholder="Enter OpenRouter API key (uses Mistral 7B :free)"
-                  className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
-                <p className="text-white/60 text-xs mt-1">✅ Zero cost - uses :free tagged models only</p>
-              </div>
-
-              <div>
-                <label className="block text-white font-medium mb-2">
-                  Groq API Key <span className="text-yellow-300">(Priority 2 - Fallback)</span>
+                  Groq API Key <span className="text-yellow-300">(Priority 1 - FASTEST ⚡)</span>
                 </label>
                 <input
                   type="password"
@@ -2754,7 +2753,21 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
                   placeholder="Enter Groq API key (uses Llama 8B Instant)"
                   className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
-                <p className="text-white/60 text-xs mt-1">⚡ High-speed fallback when OpenRouter free tier unavailable</p>
+                <p className="text-white/60 text-xs mt-1">⚡ Lightning fast (1-3 seconds) - Free tier available</p>
+              </div>
+
+              <div>
+                <label className="block text-white font-medium mb-2">
+                  OpenRouter API Key <span className="text-green-300">(Priority 2 - FREE Backup 💰)</span>
+                </label>
+                <input
+                  type="password"
+                  value={openRouterKey}
+                  onChange={(e) => setOpenRouterKey(e.target.value)}
+                  placeholder="Enter OpenRouter API key (uses Mistral 7B :free)"
+                  className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+                <p className="text-white/60 text-xs mt-1">💰 Zero cost backup with 5s timeout - tries if Groq unavailable</p>
               </div>
 
               {/* Voice Settings */}
