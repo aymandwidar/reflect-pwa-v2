@@ -85,9 +85,8 @@ export default function AppV5() {
   
   // Settings State
   const [age, setAge] = useState('');
-  const [openRouterKey, setOpenRouterKey] = useState(''); // V5: Primary API
-  const [groqKey, setGroqKey] = useState(''); // V5: Fallback 1
-  const [geminiKey, setGeminiKey] = useState(''); // V5: Fallback 2
+  const [openRouterKey, setOpenRouterKey] = useState(''); // V5: Primary API (FREE models)
+  const [groqKey, setGroqKey] = useState(''); // V5: Fallback (cost-aware)
   const [lastUsedProvider, setLastUsedProvider] = useState(''); // Track which AI responded
   const [savingSettings, setSavingSettings] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -600,10 +599,9 @@ export default function AppV5() {
         const data = snapshot.data();
         setAge(data.age || '');
         
-        // V5: Decrypt API keys (OpenRouter, Groq, Gemini)
+        // V5: Decrypt API keys (OpenRouter FREE, Groq fallback)
         setOpenRouterKey(decryptKey(data.openRouterKey) || '');
         setGroqKey(decryptKey(data.groqKey) || '');
-        setGeminiKey(decryptKey(data.geminiKey) || '');
         
         setDarkMode(data.darkMode || false);
         setVoiceEnabled(data.voiceEnabled !== false);
@@ -945,12 +943,11 @@ export default function AppV5() {
     try {
       const settingsRef = doc(db, 'artifacts', window.__app_id, 'users', userId, 'user_settings', 'keys');
       
-      // V5: Encrypt API keys before saving (OpenRouter, Groq, Gemini)
+      // V5: Encrypt API keys before saving (OpenRouter FREE, Groq fallback)
       const encryptedSettings = {
         age,
         openRouterKey: encryptKey(openRouterKey),
         groqKey: encryptKey(groqKey),
-        geminiKey: encryptKey(geminiKey),
         darkMode,
         voiceEnabled,
         ttsEnabled,
@@ -970,13 +967,14 @@ export default function AppV5() {
     } finally {
       setSavingSettings(false);
     }
-  }, [db, userId, age, openRouterKey, groqKey, geminiKey, darkMode, voiceEnabled, ttsEnabled, language, sessionTimeout, highContrast, textSize, dyslexiaFont]);
+  }, [db, userId, age, openRouterKey, groqKey, darkMode, voiceEnabled, ttsEnabled, language, sessionTimeout, highContrast, textSize, dyslexiaFont]);
 
-  // V5: Unified AI calling function with smart fallback (OpenRouter → Groq → Gemini)
+  // V5: Unified AI calling function with smart fallback (OpenRouter Free → Groq)
+  // Cost Policy: Prioritize OpenRouter free models, fallback to Groq
   const callAI = useCallback(async (systemPrompt, userMessage, conversationHistory = [], maxTokens = 500, temperature = 0.8) => {
     const errors = [];
     
-    // Try OpenRouter first (primary)
+    // Try OpenRouter FREE models first (primary - zero cost)
     if (openRouterKey) {
       try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -988,7 +986,7 @@ export default function AppV5() {
             'X-Title': 'Reflect PWA'
           },
           body: JSON.stringify({
-            model: 'anthropic/claude-3.5-sonnet', // High quality model
+            model: 'mistralai/mistral-7b-instruct:free', // FREE tier model with :free tag
             messages: [
               { role: 'system', content: systemPrompt },
               ...conversationHistory,
@@ -1001,19 +999,22 @@ export default function AppV5() {
         
         if (response.ok) {
           const data = await response.json();
-          setLastUsedProvider('OpenRouter (Claude)');
+          setLastUsedProvider('OpenRouter (Mistral Free)');
           return data.choices[0].message.content;
         }
         
         const errorData = await response.json();
-        errors.push(`OpenRouter: ${errorData.error?.message || 'Request failed'}`);
+        errors.push(`OpenRouter Free: ${errorData.error?.message || 'Request failed'}`);
+        console.log('⚠️ OpenRouter free model failed, falling back to Groq');
       } catch (err) {
-        errors.push(`OpenRouter: ${err.message}`);
+        errors.push(`OpenRouter Free: ${err.message}`);
+        console.log('⚠️ OpenRouter free model error, falling back to Groq');
       }
     }
     
-    // Fallback to Groq (fast and reliable)
+    // Fallback to Groq (mandatory fallback per cost policy)
     if (groqKey) {
+      console.log('🔄 Using Groq API fallback (cost-aware)');
       try {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -1022,7 +1023,7 @@ export default function AppV5() {
             'Authorization': `Bearer ${groqKey}`
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-8b-instant', // High-speed model per policy
             messages: [
               { role: 'system', content: systemPrompt },
               ...conversationHistory,
@@ -1035,7 +1036,7 @@ export default function AppV5() {
         
         if (response.ok) {
           const data = await response.json();
-          setLastUsedProvider('Groq (Llama)');
+          setLastUsedProvider('Groq (Llama 8B)');
           return data.choices[0].message.content;
         }
         
@@ -1046,43 +1047,9 @@ export default function AppV5() {
       }
     }
     
-    // Final fallback to Gemini
-    if (geminiKey) {
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `${systemPrompt}\n\nConversation history:\n${conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n')}\n\nUser: ${userMessage}`
-              }]
-            }],
-            generationConfig: {
-              temperature: temperature,
-              maxOutputTokens: maxTokens
-            }
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setLastUsedProvider('Gemini');
-          return data.candidates[0].content.parts[0].text;
-        }
-        
-        const errorData = await response.json();
-        errors.push(`Gemini: ${errorData.error?.message || 'Request failed'}`);
-      } catch (err) {
-        errors.push(`Gemini: ${err.message}`);
-      }
-    }
-    
-    // All providers failed
-    throw new Error(`All AI providers failed. Please check your API keys in Settings.\n\nErrors:\n${errors.join('\n')}`);
-  }, [openRouterKey, groqKey, geminiKey]);
+    // All providers failed (per cost policy: only OpenRouter Free → Groq)
+    throw new Error(`AI providers failed. Please check your API keys in Settings.\n\nCost Policy: Using OpenRouter (free models) → Groq fallback\n\nErrors:\n${errors.join('\n')}`);
+  }, [openRouterKey, groqKey]);
 
   // Call AI based on mode
   const callCbtCoach = useCallback(async (userMessage, mode) => {
@@ -1211,9 +1178,9 @@ export default function AppV5() {
     try {
       const journalRef = collection(db, 'artifacts', window.__app_id, 'users', userId, 'journal_entries');
       
-      // Get AI insights using fallback system
+      // Get AI insights using cost-optimized fallback system
       let aiInsights = null;
-      if (openRouterKey || groqKey || geminiKey) {
+      if (openRouterKey || groqKey) {
         try {
           aiInsights = await callAI(
             'You are a CBT therapist analyzing a journal entry. Identify: 1) Emotional tone, 2) Any cognitive distortions, 3) Suggested CBT techniques. Be brief and supportive.',
@@ -1240,7 +1207,7 @@ export default function AppV5() {
     } finally {
       setSavingJournal(false);
     }
-  }, [currentJournalEntry, db, userId, openRouterKey, groqKey, geminiKey, callAI]);
+  }, [currentJournalEntry, db, userId, openRouterKey, groqKey, callAI]);
 
   // Use Coping Strategy
   const useStrategy = useCallback(async (strategyId, effectiveness) => {
@@ -1341,9 +1308,9 @@ export default function AppV5() {
     };
   }, [moodLogs, moodStreak]);
 
-  // V5: Generate Mood Insights with AI
+  // V5: Generate Mood Insights with AI (cost-optimized)
   const generateMoodInsights = useCallback(async () => {
-    if ((!openRouterKey && !groqKey && !geminiKey) || moodLogs.length < 3) {
+    if ((!openRouterKey && !groqKey) || moodLogs.length < 3) {
       setError('Need at least 3 mood logs and an API key for insights');
       return;
     }
@@ -1404,11 +1371,11 @@ Format as JSON: { "patterns": "", "triggers": "", "predictions": "", "recommenda
     } finally {
       setLoadingInsights(false);
     }
-  }, [openRouterKey, groqKey, geminiKey, moodLogs, db, userId, callAI]);
+  }, [openRouterKey, groqKey, moodLogs, db, userId, callAI]);
 
-  // V5: Generate AI Journal Prompt
+  // V5: Generate AI Journal Prompt (cost-optimized)
   const generateJournalPrompt = useCallback(async (basedOnMood = null) => {
-    if (!openRouterKey && !groqKey && !geminiKey) {
+    if (!openRouterKey && !groqKey) {
       setError('API key required for AI prompts');
       return;
     }
@@ -1447,7 +1414,7 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
     } finally {
       setGeneratingPrompt(false);
     }
-  }, [openRouterKey, groqKey, geminiKey, moodLogs, db, userId, callAI]);
+  }, [openRouterKey, groqKey, moodLogs, db, userId, callAI]);
 
   // V5: Join Support Group
   const joinGroup = useCallback(async (groupId) => {
@@ -2746,11 +2713,14 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
                 />
               </div>
 
-              {/* V5: Smart AI Fallback System */}
+              {/* V5: Cost-Optimized AI Fallback System */}
               <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 mb-4">
-                <h3 className="text-white font-semibold mb-2">🤖 AI Provider Priority</h3>
+                <h3 className="text-white font-semibold mb-2">🤖 AI Cost Policy</h3>
                 <p className="text-white/80 text-sm mb-3">
-                  Reflect uses a smart fallback system. Add at least one API key. Priority: OpenRouter → Groq → Gemini
+                  💰 <strong>Cost-Minimized:</strong> OpenRouter FREE models → Groq fallback
+                </p>
+                <p className="text-white/70 text-xs mb-3">
+                  Priority 1: OpenRouter (free tier with :free tag) | Priority 2: Groq (high-speed fallback)
                 </p>
                 {lastUsedProvider && (
                   <div className="bg-green-500/30 rounded-xl px-3 py-2 mb-3">
@@ -2761,41 +2731,30 @@ Keep it to 1-2 sentences. Make it compassionate and non-judgmental.`;
 
               <div>
                 <label className="block text-white font-medium mb-2">
-                  OpenRouter API Key <span className="text-green-300">(Priority 1 - Best Quality)</span>
+                  OpenRouter API Key <span className="text-green-300">(Priority 1 - FREE Models)</span>
                 </label>
                 <input
                   type="password"
                   value={openRouterKey}
                   onChange={(e) => setOpenRouterKey(e.target.value)}
-                  placeholder="Enter OpenRouter API key (uses Claude)"
+                  placeholder="Enter OpenRouter API key (uses Mistral 7B :free)"
                   className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
+                <p className="text-white/60 text-xs mt-1">✅ Zero cost - uses :free tagged models only</p>
               </div>
 
               <div>
                 <label className="block text-white font-medium mb-2">
-                  Groq API Key <span className="text-yellow-300">(Priority 2 - Fast & Free)</span>
+                  Groq API Key <span className="text-yellow-300">(Priority 2 - Fallback)</span>
                 </label>
                 <input
                   type="password"
                   value={groqKey}
                   onChange={(e) => setGroqKey(e.target.value)}
-                  placeholder="Enter Groq API key (uses Llama)"
+                  placeholder="Enter Groq API key (uses Llama 8B Instant)"
                   className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
-              </div>
-
-              <div>
-                <label className="block text-white font-medium mb-2">
-                  Gemini API Key <span className="text-purple-300">(Priority 3 - Fallback)</span>
-                </label>
-                <input
-                  type="password"
-                  value={geminiKey}
-                  onChange={(e) => setGeminiKey(e.target.value)}
-                  placeholder="Enter Gemini API key"
-                  className="w-full bg-white/30 backdrop-blur-md rounded-2xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
+                <p className="text-white/60 text-xs mt-1">⚡ High-speed fallback when OpenRouter free tier unavailable</p>
               </div>
 
               {/* Voice Settings */}
